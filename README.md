@@ -1,1 +1,1 @@
-# StudenManage
+# StudentManage
