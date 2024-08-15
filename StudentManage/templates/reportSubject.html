@@ -1,0 +1,162 @@
+{% extends "manage.html" %}
+
+{% block title %}
+Thống kê môn học
+{% endblock %}
+
+{% block body %}
+
+<form id="submit" class="">
+    <div class="form-group row mt-2">
+        <div class="col-sm-6">
+            <h2 class="text-center">Thống kê môn học</h2>
+        </div>
+        <div class="d-flex justify-content-between align-items-end col-sm-3">
+            <label for="semester" class="" style="flex:none!important;max-width:100%!important">Môn</label>
+            <select name="subject" id="subject" onchange="this.form.submit()" class="custom-select ml-2">
+                {% for s in sub %}
+                <option value="{{s.id}}">{{s}}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="d-flex justify-content-between align-items-end col-sm-3">
+            <label for="semester" class="" style="flex:none!important;max-width:100%!important">Học kì</label>
+            <select name="semester" id="semester" onchange="this.form.submit()" class="custom-select ml-2">
+                <option value="1">1</option>
+                <option value="2">2</option>
+            </select>
+        </div>
+    </div>
+</form>
+
+<table class="table table-striped table-bordered table-hover"
+       style="border:2px; background-color:white;text-align:center;">
+    <thead>
+    <tr style="color:black; background-color:skyblue">
+        <th>STT</th>
+        <th>Lớp</th>
+        <th>Sĩ số</th>
+        <th>Số lượng đạt</th>
+        <th>Tỉ lệ</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for r in report %}
+    <tr>
+        <td class="stt"></td>
+        <td>{{r.cl}}</td>
+        <td>{{r.amount}}</td>
+        <td>{{r.countpass}}</td>
+        <td>{{r.rate}}%</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+<div class="card shadow">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Biểu đồ thống kê</h6>
+    </div>
+    <div class="card-body">
+            <canvas id="myChart"></canvas>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block jsFooter %}
+<script>
+$(".nav-item:nth-child({{ac}})").toggleClass('active');
+var index = 1;
+$('.stt').each(function () {
+    this.innerHTML = index;
+    index++;
+});
+$('#subject').val('{{subject}}');
+$('#semester').val('{{semester}}');
+
+$(function(){
+    var subject = $('#subject').val();
+    var semester = $('#semester').val();
+    $.ajax({
+        url: '/drawReportSubject',
+        data: { subject:subject, semester:semester },
+        type: 'GET',
+        success: function(response){
+            var dataa=JSON.parse(response);
+            var ctx = document.getElementById('myChart').getContext('2d');
+            ctx.height= 400;
+            var myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: dataa.labels,
+                    datasets: [{
+                        label: 'Tỉ lệ qua môn ' + $('#subject option:selected').text(),
+                        data: dataa.data,
+                        backgroundColor: "#91ffb5",
+                        hoverBackgroundColor: "#a3edf0",
+                        borderColor: "#4e73df",
+                    }]
+                },
+                options: {
+                    layout: {
+                        padding: {
+                            left: 10,
+                            right: 25,
+                            top: 25,
+                            bottom: 0
+                        }
+                    },
+                    scales: {
+                        xAxes: [{
+                            gridLines: {
+                                display: false,
+                                drawBorder: false
+                            },
+                            maxBarThickness: 25,
+                        }],
+                        yAxes: [{
+                            ticks: {
+                                min: 0,
+                                max: 100,
+                                maxTicksLimit: 10,
+                                // Include a dollar sign in the ticks
+                                callback: function(value, index, values) {
+                                    return number_format(value) + "%";
+                                }
+                            },
+                            gridLines: {
+                                color: "rgb(234, 236, 244)",
+                                zeroLineColor: "rgb(234, 236, 244)",
+                                drawBorder: false,
+                                borderDash: [2],
+                                zeroLineBorderDash: [2]
+                            }
+                        }],
+                    },
+                    tooltips: {
+                        titleMarginBottom: 10,
+                        titleFontColor: '#6e707e',
+                        titleFontSize: 14,
+                        backgroundColor: "rgb(255,255,255)",
+                        bodyFontColor: "#858796",
+                        borderColor: '#dddfeb',
+                        borderWidth: 1,
+                        xPadding: 15,
+                        yPadding: 15,
+                        displayColors: false,
+                        caretPadding: 10,
+                        callbacks: {
+                            label: function(tooltipItem, chart) {
+                                var datasetLabel = chart.datasets[tooltipItem.datasetIndex].label || '';
+                                return datasetLabel + ':' + number_format(tooltipItem.yLabel) + '%';
+                            }
+                        }
+                    },
+                }
+            })
+        }
+    })
+})
+</script>
+{% endblock %}
